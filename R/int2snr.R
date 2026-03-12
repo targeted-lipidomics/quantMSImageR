@@ -1,5 +1,3 @@
-library(Cardinal)
-
 setGeneric("int2snr", function(MSIobject, ...) standardGeneric("int2snr"))
 
 #' Function to convert the intensity values to SNR per pixel based on same transitions in noise/background pixels.Run after IS normalization.
@@ -15,7 +13,9 @@ setGeneric("int2snr", function(MSIobject, ...) standardGeneric("int2snr"))
 #'
 #' @export
 setMethod("int2snr", "quant_MSImagingExperiment",
-          function(MSIobject, val_slot = "response", noise = "Noise", tissue = "Tissue", snr_thresh = 3, sample_type = "sample_type", ...){
+          function(MSIobject, val_slot = "response", noise = "Noise", tissue = "Tissue", snr_thresh = 3,
+                   sample_type = "sample_type", average = c("mean", "median"), ...){
+            average <- match.arg(average)
 
             if(!any(pData(MSIobject)[[sample_type]] == noise)){
               print("No noise pixels. Return same values")
@@ -41,7 +41,7 @@ setMethod("int2snr", "quant_MSImagingExperiment",
               mv_impute = min(noise_vec, na.rm = T) / 10
               noise_vec[which(is.na(noise_vec))] = mv_impute
 
-              noise_level = mean(noise_vec)
+              noise_level <- if (average == "mean") mean(noise_vec) else median(noise_vec)
 
               # Calculate S/N of tissue pixels
               vec = spectraData(MSIobject)[[val_slot]][mz_ind, ]

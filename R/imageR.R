@@ -1,10 +1,3 @@
-library(Cardinal)
-library(dplyr)
-library(chemCal)
-library(viridis)
-library(ggplot2)
-library(ggthemes)
-
 setGeneric("imageR", function(MSIobject, ...) standardGeneric("imageR"))
 
 #' Function to create ion images (using ggplot)
