@@ -28,18 +28,18 @@ setMethod("createMSIDatamatrix", "quant_MSImagingExperiment",
             }
 
             # Update pixel data
-            pixel_df = data.frame(pData(MSIobject)) %>%
-              subset(!is.na(ROI)) %>%
-              tibble::rownames_to_column("pixel_ind") %>%
-              mutate(pixel_ind = sprintf("pixel_%s", pixel_ind))
+            pixel_df = data.frame(pData(MSIobject)) |>
+              subset(!is.na(ROI)) |>
+              tibble::rownames_to_column("pixel_ind") |>
+              dplyr::mutate(pixel_ind = sprintf("pixel_%s", pixel_ind))
 
 
             # All pixel df
-            all_pixel_df = data.frame( sapply(array(1:nrow(fData(MSIobject))), FUN = function(x) spectraData(MSIobject)[[val_slot]][x, ] ) ) %>%
-              mutate(pixel_ind = pixel_df$pixel_ind)
+            all_pixel_df = data.frame( sapply(array(1:nrow(fData(MSIobject))), FUN = function(x) spectraData(MSIobject)[[val_slot]][x, ] ) ) |>
+              dplyr::mutate(pixel_ind = pixel_df$pixel_ind)
             colnames(all_pixel_df) = c(fData(MSIobject)$name, "pixel_ind")
 
-            all_pixel_df = dplyr::left_join(all_pixel_df, pixel_df, by = "pixel_ind") %>% select(any_of(c(fData(MSIobject)$name, "pixel_ind", roi_header)))
+            all_pixel_df = dplyr::left_join(all_pixel_df, pixel_df, by = "pixel_ind") |> dplyr::select(dplyr::any_of(c(fData(MSIobject)$name, "pixel_ind", roi_header)))
 
 
             if(inputNA){
@@ -51,9 +51,9 @@ setMethod("createMSIDatamatrix", "quant_MSImagingExperiment",
             if(!is.na(roi_header)){
 
               #### THIS NEEDS FIXING TO SUMMARISE EACH FEATURE INDEPENDENTLY!!!!
-              ave_df = all_pixel_df %>%
-                group_by(across(all_of(roi_header))) %>%
-                summarise(across(any_of(c(fData(MSIobject)$name)), \(x) mean(x, na.rm=T))) %>%
+              ave_df = all_pixel_df |>
+                dplyr::group_by(dplyr::across(dplyr::all_of(roi_header))) |>
+                dplyr::summarise(dplyr::across(dplyr::any_of(c(fData(MSIobject)$name)), \(x) mean(x, na.rm=T))) |>
                 tibble::column_to_rownames(roi_header)
 
               if(inputNA){
@@ -63,9 +63,9 @@ setMethod("createMSIDatamatrix", "quant_MSImagingExperiment",
               MSIobject@tissueInfo@roi_average_matrix = ave_df
             }
 
-            all_pixel_df = all_pixel_df %>%
-              tibble::column_to_rownames("pixel_ind") %>%
-              select(any_of(c(fData(MSIobject)$name)))
+            all_pixel_df = all_pixel_df |>
+              tibble::column_to_rownames("pixel_ind") |>
+              dplyr::select(dplyr::any_of(c(fData(MSIobject)$name)))
 
             MSIobject@tissueInfo@all_pixel_matrix = all_pixel_df
             MSIobject@tissueInfo@sample_metadata = pixel_df

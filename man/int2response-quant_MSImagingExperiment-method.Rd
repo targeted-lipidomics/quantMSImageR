@@ -20,7 +20,7 @@
 
 \item{IS_name}{character defining the IS to use in fData(MSIobject) under the analyte header. Currently only works for a single internal standard to normalise all lipids to. "None" use individual lipids to normalise.}
 
-\item{mode}{Mode iby which to apply normalisation. "line" = normalise to median intensity of IS per sample, "line" = normalise to median intensity of IS per line, "pixel" = normalise to intensity of IS per pixel.}
+\item{mode}{Mode iby which to apply normalisation. "sample" = normalise to median intensity of IS per sample, "line" = normalise to median intensity of IS per line, "pixel" = normalise to intensity of IS per pixel.}
 
 \item{remove_IS}{Logical whether to remove internal standard feature from object}
 }

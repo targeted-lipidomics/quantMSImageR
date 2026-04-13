@@ -16,7 +16,10 @@
   overlay = F,
   feat_ind = 1,
   perc_scale = F,
-  blank_back = T
+  blank_back = T,
+  aspect_ratio = 1,
+  text_image = F,
+  roi_labels = NA
 )
 }
 \arguments{

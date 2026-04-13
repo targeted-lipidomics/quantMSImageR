@@ -1,4 +1,5 @@
 require(magick)
+require(quantMSImageR)
 
 # Read the background image - SHRINK IN IMAGEJ
 hne_path = sprintf("%s/Slide12_shrunk.png", system.file('extdata', package = 'quantMSImageR'))
@@ -37,14 +38,12 @@ tissue = tissue[4,]
 tissue_pixels = tissue_pixels_df$tissue_pixels
 tissue = tissue[, tissue_pixels]
 
-image(tissue)
-
 
 p = imageR(MSIobject = as(tissue, "quant_MSImagingExperiment"),
        val_slot = "intensity",
        value = "int",
        scale = "suppress", # "suppress" "histogram"
-       threshold = 95,
+       threshold = 90,
        sample_lab = "run",
        pixels = NA,
        percentile=99.5,
@@ -69,6 +68,10 @@ p = ggplot(data=p[["data"]],aes(x=x,y=-y,fill=response))+
 p
 
 # Save the plot to a temporary file
+# Read DESI pixel info
+desi_pixelInfo = extract_desi_coords(fn = sprintf("%s/tissue_MRM_data.raw", system.file('extdata', package = 'quantMSImageR')),
+                                     type = "DESI", plate_x = 75000, plate_y = 25000)
+
 # ion image path
 snr_path =sprintf("%s/snr_image.png", system.file('extdata', package = 'quantMSImageR'))
 
@@ -90,9 +93,6 @@ trans_snr = snr_image  %>%
 
 
 # offsets
-desi_pixelInfo = extract_desi_coords(fn = sprintf("%s/tissue_MRM_data.raw", system.file('extdata', package = 'quantMSImageR')),
-                                     type = "DESI", plate_x = 75000, plate_y = 25000)
-
 x_off = (desi_pixelInfo$origin_x - HnE_pixelInfo$origin_x)/ sfx
 x_off = (desi_pixelInfo$origin_x - HnE_pixelInfo$origin_x)/ (HnE_pixelInfo$x_step * sfx)
 y_off = (desi_pixelInfo$origin_y - HnE_pixelInfo$origin_y) / sfy
@@ -107,8 +107,7 @@ composite_image <- image_composite(background, snr_image, offset = offset_str)
 
 # Display the resulting image
 print(composite_image)
-
-
+composite_image
 
 
 

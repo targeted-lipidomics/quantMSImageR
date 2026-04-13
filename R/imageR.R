@@ -49,7 +49,7 @@ setMethod("imageR", "quant_MSImagingExperiment",
               vals = image_df$response
               vals[which(vals < 0)] = 0
               max_val = quantile(vals, percentile /100, na.rm=TRUE)
-              if (max_val > min(vals, na.rm=TRUE)){
+              if (!is.na(max_val) && max_val > min(vals, na.rm=TRUE)){
                 vals[vals > max_val] = max_val
               }
 
@@ -79,16 +79,16 @@ setMethod("imageR", "quant_MSImagingExperiment",
               # Remove x% of values - threshold
               vals = image_df$response
               min_val = quantile(vals, threshold /100, na.rm=TRUE)
-              if (min_val < max(vals, na.rm=TRUE)){
+              if (!is.na(min_val) && min_val < max(vals, na.rm=TRUE)){
                 vals[vals < min_val] = 0
               }
               image_df$response = vals
             }
 
             # Set NA and negative values to 0 for plotting!
-            image_df = image_df %>%
-              mutate(response = ifelse(is.na(response), 0, response)) %>%
-              mutate(response = ifelse(response < 0, 0, response))
+            image_df = image_df |>
+              dplyr::mutate(response = ifelse(is.na(response), 0, response)) |>
+              dplyr::mutate(response = ifelse(response < 0, 0, response))
 
             if(perc_scale == T){
               vals = image_df$response
@@ -102,28 +102,30 @@ setMethod("imageR", "quant_MSImagingExperiment",
 
             if(text_image == T){
 
-              p = image_df %>%
-                select(x, y, response) %>%
-                arrange(as.numeric(x)) %>%
-                pivot_wider(names_from = x, values_from = response) %>%
-                arrange(as.numeric(y)) %>%  # Order rows numerically if `y` is numeric
+              p = image_df |>
+                dplyr::select(x, y, response) |>
+                dplyr::arrange(as.numeric(x)) |>
+                tidyr::pivot_wider(names_from = x, values_from = response) |>
+                dplyr::arrange(as.numeric(y)) |>
                 tibble::column_to_rownames("y")
 
             } else if(blank_back == T){
-              image_df[image_df == 0] <- NA
+              image_df$response[is.na(image_df$response) | image_df$response <= 0] <- NA
 
-              p = ggplot(data=image_df,aes(x=x,y=-y,fill=response))+
+              p = ggplot(data=image_df, aes(x = x, y = -y, fill = response)) +
                 geom_tile() +
                 theme_minimal() +
-                theme(aspect.ratio=aspect_ratio,
-                      axis.title = element_blank(),
-                      axis.text = element_blank(),
-                      axis.line = element_blank(),
-                      panel.grid = element_blank(),
-                      plot.title = element_text(hjust = 0.5, face="bold", size = 15)) +
+                theme(
+                  aspect.ratio = aspect_ratio,
+                  axis.title = element_blank(),
+                  axis.text = element_blank(),
+                  axis.line = element_blank(),
+                  panel.grid = element_blank(),
+                  plot.title = element_text(hjust = 0.5, face = "bold", size = 15)
+                ) +
                 scale_fill_viridis(na.value = "white") +
-                labs(fill=value) +
-                facet_grid(sample~feature)
+                labs(fill = value) +
+                facet_grid(sample ~ feature)
 
 
             } else{

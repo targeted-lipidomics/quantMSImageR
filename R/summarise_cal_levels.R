@@ -23,17 +23,17 @@ setMethod("summarise_cal_levels", "quant_MSImagingExperiment",
             MSIobject@calibrationInfo@cal_metadata = cal_metadata
 
             # create pixel data to associate pixel indices to cal levels
-            pixel_data = data.frame(pData(MSIobject)) %>%
-              mutate(pixel_ind = 1:nrow(.)) %>%
-              subset(sample_type == cal_label) %>%
+            pixel_data = data.frame(pData(MSIobject)) |>
+              dplyr::mutate(pixel_ind = 1:nrow(pData(MSIobject))) |>
+              subset(sample_type == cal_label) |>
               subset(!is.na(.[[id]]))
 
             # Create output response df
-            response_df = tibble(cal_spot = unique(pixel_data[[id]]),
+            response_df = tibble::tibble(cal_spot = unique(pixel_data[[id]]),
                                  response_perpixel = NA,
-                                 pixels = NA) %>%
-              dplyr::left_join(MSIobject@calibrationInfo@cal_metadata, by=c("cal_spot" = id)) %>%
-              select(any_of(c("cal_spot", "response_perpixel", "pixels", "level", "lipid", "amount_pg")))
+                                 pixels = NA) |>
+              dplyr::left_join(MSIobject@calibrationInfo@cal_metadata, by=c("cal_spot" = id)) |>
+              dplyr::select(dplyr::any_of(c("cal_spot", "response_perpixel", "pixels", "level", "lipid", "amount_pg")))
 
             for(i in 1:nrow(response_df)){
 

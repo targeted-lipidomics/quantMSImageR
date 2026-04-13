@@ -17,6 +17,8 @@ library(quantMSImageR)
 library(Cardinal)
 library(yaml)
 
+`%||%` <- function(a, b) if (is.null(a)) b else a
+
 # ---------------------------------------------------------------------------
 # Resolve config path
 # ---------------------------------------------------------------------------
@@ -37,13 +39,34 @@ cfg <- yaml::read_yaml(CONFIG_FILE)
 # ---------------------------------------------------------------------------
 data_path     <- cfg$paths$data_path
 out_path      <- cfg$paths$out_path
-image_dir     <- cfg$paths$image_dir
+image_dir     <- file.path(cfg$paths$image_dir, cfg$study)
 lib_ion_path  <- cfg$paths$lib_ion_path
 markdown_rmd  <- cfg$paths$markdown_rmd
 
-fns           <- vapply(cfg$samples, `[[`, character(1), "name")
 heatmap_labs  <- vapply(cfg$samples, `[[`, character(1), "label")
-heatmap_order <- fns
+
+# Unique run ID per sample: same as label when all labels are unique;
+# append _1, _2, ... when a label appears more than once (biological replicates).
+.seen <- list()
+heatmap_order <- vapply(seq_along(heatmap_labs), function(i) {
+  lab <- heatmap_labs[i]
+  if (sum(heatmap_labs == lab) == 1L) return(lab)
+  .seen[[lab]] <<- (.seen[[lab]] %||% 0L) + 1L
+  paste0(lab, "_", .seen[[lab]])
+}, character(1))
+rm(.seen)
+
+# Build fns list: each element has pos (string or list), neg (string or list),
+# and label.  pos: / neg: may be a single string or a YAML sequence.
+# Use the unique run ID as the label so pData$run is unique per sample.
+fns <- lapply(seq_along(cfg$samples), function(i) {
+  s <- cfg$samples[[i]]
+  list(
+    pos   = if (!is.null(s$pos)) as.character(unlist(s$pos)) else NULL,
+    neg   = if (!is.null(s$neg)) as.character(unlist(s$neg)) else NULL,
+    label = heatmap_order[i]
+  )
+})
 
 snr_thresh     <- cfg$parameters$snr_thresh     %||% 3
 tiss_fc        <- cfg$parameters$tiss_fc        %||% 0.6
@@ -55,9 +78,12 @@ baseline_label <- cfg$parameters$baseline_label %||% heatmap_labs[1]
 
 render_report  <- cfg$output$render_report %||% TRUE
 output_txt     <- cfg$output$output_txt    %||% TRUE
-report_fn      <- cfg$output$report_fn     %||% paste0(cfg$study, "_report")
+report_fn      <- cfg$output$report_fn     %||% paste0(cfg$study, "_SNR", snr_thresh)
 
-`%||%` <- function(a, b) if (is.null(a)) b else a
+# Feature overrides (optional)
+feat_exclude <- cfg$features$exclude %||% NULL
+feat_rename  <- if (!is.null(cfg$features$rename))
+                  as.list(unlist(cfg$features$rename)) else NULL
 
 # ---------------------------------------------------------------------------
 # Process acquisitions (always runs; controls output via flags)
@@ -73,7 +99,9 @@ result <- generate_txt_images(
   perc           = perc,
   rot_clockwise  = rot_clockwise,
   average_method = average_method,
-  output_txt     = output_txt
+  output_txt     = output_txt,
+  exclude        = feat_exclude,
+  rename         = feat_rename
 )
 
 # ---------------------------------------------------------------------------
@@ -94,10 +122,12 @@ if (render_report) {
 
   rmarkdown::render(
     markdown_rmd,
-    output_file = file.path(
+    output_file      = file.path(
       out_path,
       paste0(report_fn, "_response_SNRfiltered.html")
-    )
+    ),
+    intermediates_dir = out_path,
+    knit_root_dir     = out_path
   )
 
   message("Report written to: ",

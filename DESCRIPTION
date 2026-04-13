@@ -1,6 +1,6 @@
 Package: quantMSImageR
 Title: Quantification of Mass Spectrometry Imaging Data
-Version: 0.1.1.0
+Version: 0.2.0.0
 Authors@R:
     person("Matthew", "Smith", , "mattyjsmith123@gmail.com", role = c("aut", "cre"),
            comment = c(ORCID = "0000-0002-7357-2670"))
@@ -11,7 +11,7 @@ Description: Software tools (largely extended from the R package Cardinal) for
 License: MIT + file LICENSE
 Encoding: UTF-8
 Roxygen: list(markdown = TRUE)
-RoxygenNote: 7.3.2
+RoxygenNote: 7.3.3
 Depends:
     R (>= 4.4.1),
     Cardinal (>= 3.6.2),
@@ -39,14 +39,14 @@ Collate:
     'setClasses.R'
     'applySNR.R'
     'back2NA.R'
+    'bind_polarities.R'
+    'read_mrm.R'
     'combine_MSI_features.R'
     'combine_MSIs.R'
     'combine_rds.R'
     'createMSIDatamatrix.R'
     'create_cal_curve.R'
     'extdata.R'
-    'extract_HnE_coords.R'
-    'extract_desi_coords.R'
     'generate_txt_images.R'
     'ggplot_themes.R'
     'imageR.R'
@@ -54,7 +54,6 @@ Collate:
     'int2response.R'
     'int2snr.R'
     'quantile_hm.R'
-    'read_mrm.R'
     'read_mrm_combined.R'
     'remove_blank_mzs.R'
     'setCommonAxis.R'

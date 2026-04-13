@@ -43,16 +43,16 @@ read_mrm = function(name, folder, lib_ion_path, overwrite=T){
     analyte_fn = list.files(imaging_folder, full.names = T)
     analyte_df = read.table(analyte_fn, fill = TRUE, sep="\t", header=F, blank.lines.skip = T)[-1,]
 
-    transitions = t(analyte_df[1:3,]) %>%
-      `colnames<-`(c("transition_id", "precursor_mz", "product_mz")) %>%
-      na.omit() %>% data.frame()
+    transitions = t(analyte_df[1:3,]) |>
+      `colnames<-`(c("transition_id", "precursor_mz", "product_mz")) |>
+      na.omit() |> data.frame()
 
     col_heads = c("ind", "x_loci", "y_loci", sprintf("transition_%s", transitions$transition), "sample", "pixel")
 
-    analyte_df = analyte_df %>%
-      `colnames<-`(col_heads) %>%
-      filter(!row_number() %in% 1:3) %>%
-      mutate(x = NA,
+    analyte_df = analyte_df |>
+      `colnames<-`(col_heads) |>
+      dplyr::filter(!dplyr::row_number() %in% 1:3) |>
+      dplyr::mutate(x = NA,
              y = NA)
 
     for(i in 1:length(sort(unique(analyte_df$y_loci)))){
@@ -68,38 +68,38 @@ read_mrm = function(name, folder, lib_ion_path, overwrite=T){
     }
 
     # pixel metadata
-    coord <- analyte_df%>%select(x,y)
+    coord <- analyte_df |> dplyr::select(x, y)
     run <- factor(rep(name, nrow(coord)))
     pdata <- PositionDataFrame(run=run, coord=coord)
 
 
     # Round precursors and products
-    transitions = transitions %>% mutate(precursor_mz = round(precursor_mz, digits = 0),
-                                         product_mz = round(product_mz, digits = 0))
-    ion_lib = ion_lib %>% mutate(precursor_mz = round(precursor_mz, digits = 0),
-                                 product_mz = round(product_mz, digits = 0))
+    transitions = transitions |> dplyr::mutate(precursor_mz = round(precursor_mz, digits = 0),
+                                               product_mz = round(product_mz, digits = 0))
+    ion_lib = ion_lib |> dplyr::mutate(precursor_mz = round(precursor_mz, digits = 0),
+                                       product_mz = round(product_mz, digits = 0))
 
     # Gather info of MRM transitions from the ion library
-    ion_lib = ion_lib %>%
-      subset(Polarity == polarity) %>%
-      dplyr::right_join(y=transitions,  by = c('precursor_mz', 'product_mz'), suffix = c("_name", "_int")) %>%
-      mutate(transition_id_name = ifelse(is.na(transition_id_name), transition_id_int, transition_id_name),
+    ion_lib = ion_lib |>
+      subset(Polarity == polarity) |>
+      dplyr::right_join(y=transitions,  by = c('precursor_mz', 'product_mz'), suffix = c("_name", "_int")) |>
+      dplyr::mutate(transition_id_name = ifelse(is.na(transition_id_name), transition_id_int, transition_id_name),
              Polarity = ifelse(is.na(Polarity), polarity, Polarity),
-             Type = ifelse(is.na(Type), "Unknown", Type)) %>%
-      arrange(transition_id_int) %>% group_by(precursor_mz, product_mz) %>%
-      mutate(transition_id_name = paste0(transition_id_name, collapse = " || "),
+             Type = ifelse(is.na(Type), "Unknown", Type)) |>
+      dplyr::arrange(transition_id_int) |> dplyr::group_by(precursor_mz, product_mz) |>
+      dplyr::mutate(transition_id_name = paste0(transition_id_name, collapse = " || "),
              precursor_mz = paste0(precursor_mz, collapse = " || "),
              product_mz = paste0(product_mz, collapse = " || "),
              collision_eV = paste0(collision_eV, collapse = " || "),
-             cone_V = paste0(cone_V, collapse = " || ")) %>%
-      distinct(transition_id_name, transition_id_int, .keep_all = T) %>%
-      mutate(duplicate_mrms = row_number(),
+             cone_V = paste0(cone_V, collapse = " || ")) |>
+      dplyr::distinct(transition_id_name, transition_id_int, .keep_all = TRUE) |>
+      dplyr::mutate(duplicate_mrms = dplyr::row_number(),
              transition_id_name = ifelse(duplicate_mrms>1,
                                          sprintf("%s:- %s", duplicate_mrms, transition_id_name),
-                                         transition_id_name)) %>%
-      ungroup() %>%
-      arrange(precursor_mz, product_mz, transition_id_int) %>%
-      mutate(new_transition_int = row_number())
+                                         transition_id_name)) |>
+      dplyr::ungroup() |>
+      dplyr::arrange(precursor_mz, product_mz, transition_id_int) |>
+      dplyr::mutate(new_transition_int = dplyr::row_number())
 
     # intensity data
     idata = t( sapply(ion_lib$transition_id_int, FUN = function(x){

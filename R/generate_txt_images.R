@@ -11,7 +11,12 @@
 #' @import pracma
 #' @include setClasses.R
 #'
-#' @param fns Character vector of acquisition names (without `.raw` suffix).
+#' @param fns Character vector of acquisition names (without `.raw` suffix)
+#'   for single-polarity studies. For dual-polarity studies pass a list where
+#'   each element is either a plain string (single acquisition) or a named list
+#'   with fields `pos`, `neg`, `label`, and optionally `prefix_pos`/`prefix_neg`
+#'   (see [bind_polarities()]). `run_study.R` builds this list automatically
+#'   from the YAML `samples` section.
 #' @param data_path Path to the folder that contains the `.raw` acquisition
 #'   directories.
 #' @param image_dir Root output directory. One sub-directory per acquisition
@@ -34,6 +39,12 @@
 #'   every acquisition (default `"median"`).
 #' @param output_txt Logical. When `FALSE`, processing runs but no files are
 #'   written to disk (default `TRUE`).
+#' @param exclude Character vector of feature names to drop before processing.
+#'   Names must match `fData()$name` exactly (default `NULL` — keep all).
+#' @param rename Named character vector or list mapping old feature names to new
+#'   display names, e.g. `c("old name" = "new name")`. Applied to all combined
+#'   objects after loading; the new names appear in file names and the heatmap
+#'   (default `NULL` — no renaming).
 #'
 #' @return Invisibly returns a named list with four processed
 #'   `quant_MSImagingExperiment` objects:
@@ -57,7 +68,9 @@ generate_txt_images <- function(
   perc           = 97,
   rot_clockwise  = 0,
   average_method = "median",
-  output_txt     = TRUE
+  output_txt     = TRUE,
+  exclude        = NULL,
+  rename         = NULL
 ) {
 
   average_method <- match.arg(average_method, c("mean", "median"))
@@ -66,6 +79,16 @@ generate_txt_images <- function(
 
   make_txt_mat <- function(MSIobject, feat_ind, val_slot, value_label,
                             threshold, percentile) {
+    # When every pixel is NA (analyte absent in this sample), return a
+    # correctly-dimensioned zero matrix so downstream tools (spatialData /
+    # tissuUmaps) receive a file with the right pixel grid.
+    ivals <- as.numeric(spectraData(MSIobject[feat_ind, ])[[val_slot]])
+    if (all(is.na(ivals))) {
+      nx <- length(unique(coord(MSIobject)$x))
+      ny <- length(unique(coord(MSIobject)$y))
+      return(pracma::rot90(matrix(0, nrow = ny, ncol = nx), k = rot_clockwise))
+    }
+
     tryCatch({
       result <- imageR(
         MSIobject  = MSIobject, val_slot   = val_slot, value      = value_label,
@@ -100,27 +123,88 @@ generate_txt_images <- function(
     x
   }
 
+  apply_renames <- function(obj, rename_map) {
+    if (is.null(rename_map) || length(rename_map) == 0) return(obj)
+    old_nms <- names(rename_map)
+    for (i in seq_along(old_nms)) {
+      ind <- fData(obj)$name == old_nms[i]
+      if (any(ind)) fData(obj)$name[ind] <- rename_map[[i]]
+    }
+    featureNames(obj) <- fData(obj)$name
+    obj
+  }
+
+  `%||%` <- function(a, b) if (is.null(a)) b else a
+
+  # Load a single acquisition, attach tissue/noise labels, trim, exclude
+  load_and_prep_acq <- function(fn_name) {
+    obj  <- read_mrm(name = fn_name, folder = data_path, lib_ion_path = lib_ion_path)
+    tpdf <- read.csv(sprintf("%s/%s.raw/tissue_pixels.csv", data_path, fn_name))
+    pData(obj)$sample_name <- makeFactor(
+      tissue_pixels = tpdf[["tissue_pixels"]],
+      noise_pixels  = tpdf[["noise_pixels"]]
+    )
+    obj <- as(obj, "quant_MSImagingExperiment")
+    obj <- trim_MSI(MSI_data = obj)
+    if (!is.null(exclude) && length(exclude) > 0) {
+      keep <- !fData(obj)$name %in% exclude
+      if (!all(keep)) {
+        message(sprintf("  Excluding %d transition(s): %s",
+                        sum(!keep),
+                        paste(fData(obj)$name[!keep], collapse = ", ")))
+        obj <- obj[keep, ]
+      }
+    }
+    obj
+  }
+
+  # Load one or more acquisitions of the same polarity, combine, set run label
+  load_and_prep_multiple <- function(fns_vec, label) {
+    fns_vec <- as.character(unlist(fns_vec))
+    objs    <- lapply(fns_vec, load_and_prep_acq)
+    obj     <- objs[[1]]
+    for (i in seq_along(objs)[-1])
+      obj <- combine_MSIs(obj, objs[[i]])
+    pData(obj)$run <- factor(rep(label, ncol(obj)))
+    obj
+  }
+
+  # ----- Normalise fns → fn_list / fn_labels ----------------------------
+  # fns: character vector (backward-compat) OR list where each element is
+  # a string (single acq) or named list with pos/neg/label fields.
+  fn_list   <- as.list(fns)
+  fn_labels <- vapply(fn_list, function(e)
+    if (is.list(e)) e$label %||% (e$pos[1] %||% e$neg[1]) else as.character(e),
+    character(1))
+
   # ----- Load and process acquisitions -----------------------------------
 
-  combined    <- NULL
+  combined     <- NULL
   combined_snr <- NULL
   combined_FC  <- NULL
 
-  for (ind in seq_along(fns)) {
-    fn <- fns[ind]
-    message(sprintf("Loading %s (%d/%d)", fn, ind, length(fns)))
+  for (ind in seq_along(fn_list)) {
+    fn_entry <- fn_list[[ind]]
+    fn_label <- fn_labels[ind]
+    message(sprintf("Loading %s (%d/%d)", fn_label, ind, length(fn_list)))
 
-    tissue <- read_mrm(name = fn, folder = data_path, lib_ion_path = lib_ion_path)
+    if (is.list(fn_entry)) {
+      pos_fns <- if (!is.null(fn_entry$pos)) unlist(fn_entry$pos) else NULL
+      neg_fns <- if (!is.null(fn_entry$neg)) unlist(fn_entry$neg) else NULL
 
-    tissue_pixel_df <- read.csv(
-      sprintf("%s/%s.raw/tissue_pixels.csv", data_path, fn)
-    )
-    pData(tissue)$sample_name <- makeFactor(
-      tissue_pixels = tissue_pixel_df[["tissue_pixels"]],
-      noise_pixels  = tissue_pixel_df[["noise_pixels"]]
-    )
-    tissue <- as(tissue, "quant_MSImagingExperiment")
-    tissue <- trim_MSI(MSI_data = tissue)
+      if (!is.null(pos_fns) && !is.null(neg_fns)) {
+        # Both polarities: combine within each polarity then bind across
+        pos_obj <- load_and_prep_multiple(pos_fns, label = fn_label)
+        neg_obj <- load_and_prep_multiple(neg_fns, label = fn_label)
+        tissue  <- bind_polarities(pos_obj, neg_obj, label = fn_label)
+      } else {
+        # Single polarity (pos: OR neg: only)
+        tissue <- load_and_prep_multiple(pos_fns %||% neg_fns, label = fn_label)
+      }
+    } else {
+      # Plain string: backward-compatible single acquisition
+      tissue <- load_and_prep_acq(fn_entry)
+    }
 
     tissue_fc <- int2snr(
       MSIobject = tissue, val_slot = "intensity", sample_type = "sample_name",
@@ -151,6 +235,14 @@ generate_txt_images <- function(
     sample_type = "sample_name"
   )
 
+  # Apply display-name overrides to all four objects
+  if (!is.null(rename) && length(rename) > 0) {
+    combined              <- apply_renames(combined,              rename)
+    combined_snr          <- apply_renames(combined_snr,          rename)
+    combined_FC           <- apply_renames(combined_FC,           rename)
+    combined_NAbackground <- apply_renames(combined_NAbackground, rename)
+  }
+
   out <- list(
     combined              = combined,
     combined_snr          = combined_snr,
@@ -162,13 +254,13 @@ generate_txt_images <- function(
 
   # ----- Generate text-image files ---------------------------------------
 
-  for (fn in fns) {
+  for (fn_label in fn_labels) {
 
-    combined_snr_tmp  <- combined_snr[,         pData(combined_snr)$run          == fn]
-    combined_FC_tmp   <- combined_FC[,           pData(combined_FC)$run           == fn]
-    combined_back_tmp <- combined_NAbackground[, pData(combined_NAbackground)$run == fn]
+    combined_snr_tmp  <- combined_snr[,         pData(combined_snr)$run          == fn_label]
+    combined_FC_tmp   <- combined_FC[,           pData(combined_FC)$run           == fn_label]
+    combined_back_tmp <- combined_NAbackground[, pData(combined_NAbackground)$run == fn_label]
 
-    image_path <- file.path(image_dir, fn)
+    image_path <- file.path(image_dir, fn_label)
     dirs <- list(
       snr_filt  = file.path(image_path, sprintf("intensity_SNRfiltered%s",                       snr_thresh)),
       snr_norm  = file.path(image_path, sprintf("response_SNRfiltered%s_NORM",                   snr_thresh)),

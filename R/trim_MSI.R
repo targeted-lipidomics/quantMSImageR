@@ -19,18 +19,18 @@ trim_MSI = function(MSI_data){
   pd <- as.data.frame(pData(MSI_data))
 
   # Identify x columns that are entirely noise
-  bad_x <- pd %>%
-    group_by(x) %>%
-    summarise(all_noise = all(sample_name == "noise_pixels")) %>%
-    filter(all_noise) %>%
-    pull(x)
+  bad_x <- pd |>
+    dplyr::group_by(x) |>
+    dplyr::summarise(all_noise = all(sample_name == "noise_pixels")) |>
+    dplyr::filter(all_noise) |>
+    dplyr::pull(x)
 
   # Identify y rows that are entirely noise
-  bad_y <- pd %>%
-    group_by(y) %>%
-    summarise(all_noise = all(sample_name == "noise_pixels")) %>%
-    filter(all_noise) %>%
-    pull(y)
+  bad_y <- pd |>
+    dplyr::group_by(y) |>
+    dplyr::summarise(all_noise = all(sample_name == "noise_pixels")) |>
+    dplyr::filter(all_noise) |>
+    dplyr::pull(y)
 
   # Pixels to KEEP
   keep_pixels <- which(

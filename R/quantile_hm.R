@@ -51,7 +51,7 @@ quantile_hm = function(MSIobject, quant_val, heatmap_order = NA, heatmap_labs=NA
   out_matrix <- out_matrix[, heatmap_order]
 
   # Scale each row to the percentage of its maximum value, avoiding division by 0
-  row_max <- rowMaxs(out_matrix, na.rm = TRUE)
+  row_max <- matrixStats::rowMaxs(out_matrix, na.rm = TRUE)
 
   # Replace zeros in row_max with 1 to avoid NaN during division
   row_max[row_max == 0] <- 1
@@ -73,9 +73,9 @@ quantile_hm = function(MSIobject, quant_val, heatmap_order = NA, heatmap_labs=NA
   # Creating the heatmap: rows = features, columns = samples
   if (!all(is.na(heatmap_labs))) {
     heatmap_labs <- factor(heatmap_labs, levels = unique(heatmap_labs))
-    hm = Heatmap(z_matrix, name = "Z-score", cluster_rows = FALSE, column_split = heatmap_labs)
+    hm = ComplexHeatmap::Heatmap(z_matrix, name = "Z-score", cluster_rows = FALSE, cluster_columns = FALSE, show_column_dend = FALSE, column_split = heatmap_labs)
   } else {
-    hm = Heatmap(z_matrix, name = "Z-score", cluster_rows = FALSE)
+    hm = ComplexHeatmap::Heatmap(z_matrix, name = "Z-score", cluster_rows = FALSE, cluster_columns = FALSE, show_column_dend = FALSE)
   }
 
   return(hm)
