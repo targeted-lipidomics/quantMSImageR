@@ -1,42 +1,62 @@
 Package: quantMSImageR
-Title: Quantification of mass spectrometry imaging dat
-Version: 0.1.0.0
-Authors@R: 
+Title: Quantification of Mass Spectrometry Imaging Data
+Version: 0.2.0.0
+Authors@R:
     person("Matthew", "Smith", , "mattyjsmith123@gmail.com", role = c("aut", "cre"),
            comment = c(ORCID = "0000-0002-7357-2670"))
-Depends:
-	R (>= 4.4.1),
-	Cardinal (>= 3.6.2),
-	dplyr (>= 1.1.4),
-	chemCal (>= 0.2.3),
-	viridis (>= 0.6.5),
-	ggplot2 (>= 3.5.1),
-	ggthemes (>= 5.1.0),
-	scales (>= 1.3.0),
-	tibble (>= 3.2.1),
-	tidyr (>= 1.3.1),
-	DT (>= 0.33)
-VignetteBuilder: knitr
-Suggests: testthat
-Description: Software tools (largely extended from the R package Cardinal) for quantification of mass spectrometry imaging (MSI) data.
-License: `use_mit_license()`, `use_gpl3_license()` or friends to pick a
-    license
+Description: Software tools (largely extended from the R package Cardinal) for
+    quantification of mass spectrometry imaging (MSI) data, including
+    signal-to-noise filtering, tissue fold-change computation, quantile
+    heatmaps, and batch export of per-feature text images for external viewers.
+License: MIT + file LICENSE
 Encoding: UTF-8
 Roxygen: list(markdown = TRUE)
-RoxygenNote: 7.3.2
-Collate: 
+RoxygenNote: 7.3.3
+Depends:
+    R (>= 4.4.1),
+    Cardinal (>= 3.6.2),
+    dplyr (>= 1.1.4),
+    ggplot2 (>= 3.5.1),
+    tibble (>= 3.2.1),
+    tidyr (>= 1.3.1)
+Imports:
+    chemCal (>= 0.2.3),
+    viridis (>= 0.6.5),
+    ggthemes (>= 5.1.0),
+    scales (>= 1.3.0),
+    DT (>= 0.33),
+    magick (>= 2.8.4),
+    ComplexHeatmap (>= 2.0.0),
+    matrixStats (>= 0.63.0),
+    pracma (>= 2.4.0)
+Suggests:
+    testthat (>= 3.0.0),
+    knitr (>= 1.40),
+    rmarkdown (>= 2.20),
+    yaml (>= 2.3.0)
+VignetteBuilder: knitr
+Collate:
     'setClasses.R'
+    'applySNR.R'
+    'back2NA.R'
+    'bind_polarities.R'
+    'read_mrm.R'
+    'combine_MSI_features.R'
     'combine_MSIs.R'
+    'combine_rds.R'
     'createMSIDatamatrix.R'
     'create_cal_curve.R'
     'extdata.R'
+    'generate_txt_images.R'
     'ggplot_themes.R'
     'imageR.R'
     'int2conc.R'
     'int2response.R'
     'int2snr.R'
-    'read_mrm.R'
+    'quantile_hm.R'
+    'read_mrm_combined.R'
     'remove_blank_mzs.R'
     'setCommonAxis.R'
     'summarise_cal_levels.R'
+    'trim_MSI.R'
     'zero2na.R'

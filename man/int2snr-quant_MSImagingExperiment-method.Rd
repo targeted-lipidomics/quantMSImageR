@@ -11,6 +11,7 @@
   tissue = "Tissue",
   snr_thresh = 3,
   sample_type = "sample_type",
+  average = c("mean", "median"),
   ...
 )
 }

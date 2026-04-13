@@ -124,3 +124,36 @@ NULL
 #'
 #' This data is used to test int2conc() function.
 NULL
+
+#' Microscope image of H&E stain (.czi)
+#'
+#' Microscope image of H&E stain (.czi) to extract image coordinates
+#'
+#' @name Slide12
+#'
+#' @section Slide12.czi:
+#'
+#' This data is used to test colocalising images
+NULL
+
+#' Shrunk microscope image of H&E stain (.png)
+#'
+#' Shrunk image of H&E stain (.png) to colocalise with ion image
+#'
+#' @name Slide12_shrunk
+#'
+#' @section Slide12_shrunk.png:
+#'
+#' This data is used to test colocalising images
+NULL
+
+#' Ion image (.png)
+#'
+#' Ion image of 12,13_DiHOME (.png) to colocalise with H&E stain
+#'
+#' @name snr_image
+#'
+#' @section snr_image.png:
+#'
+#' This data is used to test colocalising images
+NULL

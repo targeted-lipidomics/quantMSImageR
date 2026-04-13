@@ -13,12 +13,13 @@ setGeneric("create_cal_curve", function(MSIobject, ...) standardGeneric("create_
 #'
 #' @param response_matrix matrix of average pg/pixel of m/z (rows = m/z and cols = cal level)
 #' @param cal_type string of approach to generate claibration curve - 'std_addition' if standards are on tissue and 'cal' if direct onto glass slide.
+#' @param level Column header to find background label from 'MSIobject@calibrationInfo@cal_response_data'
 #' @param background string referring to background level from "level" label in 'MSIobject@calibrationInfo@cal_response_data'.
 #' @return MSIobject with slots updated for i) cal_list - List of linear models for each m/z (response v concentration, where concentration is pg/pixel) and ii) r2 values for each calibration iii) calibration metadata
 #'
 #' @export
 setMethod("create_cal_curve", "quant_MSImagingExperiment",
-          function(MSIobject, cal_type = "std_addition", background = "background"){
+          function(MSIobject, cal_type = "std_addition", level = "level", background = "background"){
 
             cal_data = MSIobject@calibrationInfo@cal_response_data
 
@@ -33,9 +34,9 @@ setMethod("create_cal_curve", "quant_MSImagingExperiment",
               feature = features[i]
               cal_subset = subset(cal_data, lipid == feature)
 
-              eqn = lm(response_perpixel~pg_perpixel, data = cal_subset, na.action = na.exclude, weights = (1/pg_perpixel))
-
               if(cal_type == "std_addition"){
+
+                eqn = lm(response_perpixel~pg_perpixel, data = cal_subset, na.action = na.exclude)
 
                 # Calculate background conc
                 background_conc = inverse.predict(eqn, 0)$Prediction
@@ -44,11 +45,14 @@ setMethod("create_cal_curve", "quant_MSImagingExperiment",
                 cal_subset$pg_perpixel = cal_subset$pg_perpixel - background_conc
 
 
-                cal_subset = subset(cal_subset, lev != background)
+                cal_subset = cal_subset[cal_subset[[level]] != background, ]
 
-                # Update equation
-                eqn = lm(response~pg_perpixel, data = cal_subset, na.action = na.exclude)
               }
+
+              cal_subset = mutate(cal_subset, pg_perpixel = ifelse(pg_perpixel == 0, yes= 1e-9, no = pg_perpixel))
+
+              # Update equation
+              eqn = lm(response_perpixel~pg_perpixel, data = cal_subset, na.action = na.exclude, weights = (1/pg_perpixel))
 
               r2_df$r2[i] = summary(eqn)[["r.squared"]]
               cal_list[[feature]] = eqn

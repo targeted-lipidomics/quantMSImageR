@@ -1,5 +1,3 @@
-library(Cardinal)
-
 setGeneric("combine_MSIs", function(MSIobject, ...) standardGeneric("combine_MSIs"))
 
 #' Function to combine MSImagingExperiment objects.

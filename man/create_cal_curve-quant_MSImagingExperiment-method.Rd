@@ -7,11 +7,14 @@
 \S4method{create_cal_curve}{quant_MSImagingExperiment}(
   MSIobject,
   cal_type = "std_addition",
+  level = "level",
   background = "background"
 )
 }
 \arguments{
 \item{cal_type}{string of approach to generate claibration curve - 'std_addition' if standards are on tissue and 'cal' if direct onto glass slide.}
+
+\item{level}{Column header to find background label from 'MSIobject@calibrationInfo@cal_response_data'}
 
 \item{background}{string referring to background level from "level" label in 'MSIobject@calibrationInfo@cal_response_data'.}
 

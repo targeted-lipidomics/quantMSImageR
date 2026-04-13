@@ -4,7 +4,12 @@
 \alias{int2conc,quant_MSImagingExperiment-method}
 \title{Function to update intensity with concentration values}
 \usage{
-\S4method{int2conc}{quant_MSImagingExperiment}(MSIobject, val_slot = "response", pixels = "Tissue")
+\S4method{int2conc}{quant_MSImagingExperiment}(
+  MSIobject,
+  val_slot = "response",
+  pixel_header = "sample_type",
+  pixels = "Tissue"
+)
 }
 \arguments{
 \item{MSIobject}{quant_MSImagingExperiment object}

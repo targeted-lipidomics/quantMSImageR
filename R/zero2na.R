@@ -13,6 +13,8 @@ setGeneric("zero2na", function(MSIobject, ...) standardGeneric("zero2na"))
 setMethod("zero2na", "quant_MSImagingExperiment",
           function(MSIobject, val_slot = "intensity"){
 
+            MSIobject = as(MSIobject, "quant_MSImagingExperiment")
+
             for(i in 1:nrow(fData(MSIobject))){
 
               #print(i)

@@ -1,5 +1,3 @@
-library(Cardinal)
-
 #' calibrationInfo
 #'
 #' Class to store information about the calibration spots

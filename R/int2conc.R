@@ -13,10 +13,10 @@ setGeneric("int2conc", function(MSIobject, ...) standardGeneric("int2conc"))
 #'
 #' @export
 setMethod("int2conc", "quant_MSImagingExperiment",
-          function(MSIobject, val_slot = "response", pixels = "Tissue"){
+          function(MSIobject, val_slot = "response", pixel_header = "sample_type", pixels = "Tissue"){
 
             cal_list = MSIobject@calibrationInfo@cal_list
-            pixel_inds = which(pData(MSIobject)$sample_type %in% pixels)
+            pixel_inds = which(pData(MSIobject)[[pixel_header]] %in% pixels)
             MSIobject = MSIobject[, pixel_inds]
 
             spectra(MSIobject, "conc - pg/pixel") = matrix(nrow = nrow(MSIobject), ncol = ncol(MSIobject))
