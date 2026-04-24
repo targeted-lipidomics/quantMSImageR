@@ -1,3 +1,7 @@
+> **This repository has been archived and is no longer maintained.**
+> Active development has moved to **[MJS-708/quantMSImageR](https://github.com/MJS-708/quantMSImageR)**.
+> Please update any bookmarks, citations, or `remotes::install_github()` calls accordingly.
+
 [![](https://badgen.net/static/Publication/10.1021.acs.analchem.4c02350/green?.svg)](https://doi.org/10.1021/acs.analchem.4c02350) [![DOI](https://zenodo.org/badge/DOI/10.5281/zenodo.10807654.svg)](https://doi.org/10.5281/zenodo.10807654)
 
 # quantMSImageR
@@ -34,13 +38,13 @@ Install the latest release from GitHub:
 
 ```r
 # install.packages("remotes")
-remotes::install_github("targeted-lipidomics/quantMSImageR", ref = "main")
+remotes::install_github("MJS-708/quantMSImageR", ref = "main")
 ```
 
 For the development version:
 
 ```r
-remotes::install_github("targeted-lipidomics/quantMSImageR", ref = "dev")
+remotes::install_github("MJS-708/quantMSImageR", ref = "dev")
 ```
 
 Local development install:
